@@ -1,0 +1,85 @@
+---
+import Giscus from "@giscus/react";
+import { getCollection, type CollectionEntry } from "astro:content";
+import Card from "../../components/card";
+import RelatedPosts from "../../components/related-posts";
+import Layout from "../../layout/Layout.astro";
+import type { Article } from "../../type/type";
+import { relatedTags } from "../../utils/utils";
+
+export async function getStaticPaths() {
+  const docs = await getCollection("articles");
+  return docs.map((doc) => ({
+    params: { slug: doc.slug },
+    props: doc,
+  }));
+}
+type Props = CollectionEntry<"articles">;
+
+const doc = Astro.props;
+
+// This post
+const { slug, data } = doc;
+const { Content } = await doc.render();
+
+// Related post
+const docs = await getCollection("articles");
+const articles: { slug: string; data: Article }[] = docs
+  .map((el) => ({
+    slug: el.slug,
+    data: {
+      ...el.data,
+      href: "/articles/" + el.slug,
+    },
+  }))
+  .filter(
+    (article) =>
+      article.slug !== slug && relatedTags(data.tags, article.data.tags),
+  )
+  .sort((a, b) => a.data.id - b.data.id)
+  .slice(0, 5);
+
+const repo = import.meta.env.REPO;
+const repoId = import.meta.env.REPO_ID;
+const categoryId = import.meta.env.CATEGORY_ID;
+---
+
+<Layout title={data.title} description={data.description}>
+  <section>
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="pb-8 pt-28 md:pb-16 md:pt-36">
+        <div class="md:flex md:justify-between">
+          <Card data={data} />
+          <div class="md:grow">
+            <div class="pb-8">
+              <h1 class="font-inter text-4xl font-extrabold">{data.title}</h1>
+              <!-- Content -->
+              <Content />
+            </div>
+            <!-- Comments -->
+            <div class="mb-8">
+              <Giscus
+                id={slug}
+                repo={repo}
+                repoId={repoId}
+                category="Comments"
+                categoryId={categoryId}
+                mapping="url"
+                term="Welcome!"
+                reactionsEnabled="1"
+                emitMetadata="0"
+                inputPosition="top"
+                theme="cobalt"
+                lang="en"
+                loading="lazy"
+                client:only="react"
+              />
+            </div>
+            <!-- Related -->
+            <RelatedPosts articles={articles} />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

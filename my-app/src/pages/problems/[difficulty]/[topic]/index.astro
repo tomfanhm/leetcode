@@ -1,0 +1,66 @@
+---
+import List from "../../../../components/list";
+import Sidebar from "../../../../components/sidebar";
+import Layout from "../../../../layout/Layout.astro";
+import {
+  capitalizeFirstLetter,
+  convertToKebabCase,
+  convertToTitleCase,
+  filterArticles,
+  getArticles,
+  getTags,
+  sortArticlesByDate,
+} from "../../../../utils/utils";
+
+export async function getStaticPaths() {
+  const difficulties = ["easy", "medium", "hard", "all"] as const;
+  const articles = await getArticles().then((el) => sortArticlesByDate(el));
+  const tags = getTags(articles).map((el) => convertToKebabCase(el));
+  const temp: Record<"params", { difficulty: string; topic: string }>[] = [];
+
+  difficulties.forEach((difficulty) => {
+    tags.forEach((tag) => {
+      temp.push({
+        params: {
+          difficulty: difficulty,
+          topic: tag,
+        },
+      });
+    });
+  });
+
+  return temp;
+}
+
+const { topic, difficulty } = Astro.params;
+
+const title = `${capitalizeFirstLetter(difficulty)} Problems | ${convertToTitleCase(topic)}`;
+
+const articles = await getArticles().then((el) => sortArticlesByDate(el));
+
+const tags = getTags(articles);
+
+const related = filterArticles(articles, {
+  difficulty: difficulty as "easy" | "medium" | "hard" | "all",
+  topic: convertToTitleCase(topic),
+});
+---
+
+<Layout title={title}>
+  <section>
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="py-8 md:py-16">
+        <div class="md:flex md:justify-between">
+          <!-- Sidebar -->
+          <Sidebar tags={tags} client:only="react" />
+          <div class="md:grow">
+            <List
+              articles={related}
+              header={`# ${capitalizeFirstLetter(difficulty)} # ${convertToTitleCase(topic)}`}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

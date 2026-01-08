@@ -1,0 +1,61 @@
+---
+import { Image } from "astro:assets";
+import banner from "../assets/banner.png";
+import List from "../components/list";
+import Sidebar from "../components/sidebar";
+import Layout from "../layout/Layout.astro";
+import { getArticles, getTags, sortArticlesByDate } from "../utils/utils";
+
+const title = "Home";
+const description =
+  "Discovering the optimal approach to a problem can be an enjoyable quest.";
+
+const articles = await getArticles().then((el) => sortArticlesByDate(el));
+
+const tags = getTags(articles);
+---
+
+<Layout title={title} description={description}>
+  <section>
+    <div class="hero relative mx-auto max-w-6xl overflow-hidden px-4 sm:px-6">
+      <div class="hero-content flex-col px-0 lg:flex-row-reverse">
+        <Image
+          src={banner}
+          alt="Leetcode Blog Banner"
+          class="w-full max-w-sm rounded-lg"
+        />
+        <div>
+          <h1 class="text-5xl font-bold">Cracking LeetCode</h1>
+          <p class="py-6">
+            By recording and sharing my answers with you, I'll guide you through
+            the process, helping you build the confidence and skills.
+          </p>
+          <a href="/problems/all">
+            <button class="btn btn-primary">Get Started</button>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="py-8 md:py-16">
+        <div class="md:flex md:justify-between">
+          <!-- Sidebar -->
+          <Sidebar tags={tags} client:only="react" />
+          <div class="md:grow">
+            <List articles={articles.slice(0, 10)} header="Latest Articles" />
+            <div class="grid w-full place-items-center">
+              <a
+                href="/problems/all"
+                class="btn btn-outline btn-primary btn-block max-w-xl rounded-full"
+              >
+                View More
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

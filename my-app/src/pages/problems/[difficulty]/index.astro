@@ -1,0 +1,51 @@
+---
+import List from "../../../components/list";
+import Sidebar from "../../../components/sidebar";
+import Layout from "../../../layout/Layout.astro";
+import {
+  capitalizeFirstLetter,
+  filterArticles,
+  getArticles,
+  getTags,
+  sortArticlesByDate,
+} from "../../../utils/utils";
+
+export function getStaticPaths() {
+  const arr = ["easy", "medium", "hard", "all"] as const;
+  return arr.map((el) => ({
+    params: { difficulty: el },
+  }));
+}
+
+const { difficulty } = Astro.params;
+
+const title = `${capitalizeFirstLetter(difficulty)} Problems`;
+
+const articles = await getArticles().then((el) => sortArticlesByDate(el));
+
+const tags = getTags(articles);
+
+const related = filterArticles(articles, {
+  difficulty: difficulty,
+  topic: null,
+});
+---
+
+<Layout title={title}>
+  <section>
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div class="py-8 md:py-16">
+        <div class="md:flex md:justify-between">
+          <!-- Sidebar -->
+          <Sidebar tags={tags} client:only="react" />
+          <div class="md:grow">
+            <List
+              articles={related}
+              header={`# ${capitalizeFirstLetter(difficulty)}`}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
